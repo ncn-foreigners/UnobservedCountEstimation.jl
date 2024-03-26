@@ -6,6 +6,7 @@ module UnobservedCountEstimation
 using Optim, Statistics, GLM, Distributions, DataFrames
 
 include("original_model.jl")
+include("interface.jl")
 
 export placeholder
 export zhang_model
