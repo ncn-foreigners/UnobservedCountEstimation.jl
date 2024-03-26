@@ -1,0 +1,13 @@
+name = "UnobservedCountEstimation"
+uuid = "27f355fc-deca-4449-8501-6ec19d995810"
+authors = ["Piotr Chlebicki"]
+version = "1.0.0-DEV"
+
+[compat]
+julia = "1"
+
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
