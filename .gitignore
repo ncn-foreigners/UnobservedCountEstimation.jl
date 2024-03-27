@@ -3,3 +3,4 @@
 *.jl.cov
 *.jl.mem
 /Manifest.toml
+test_code.jl
