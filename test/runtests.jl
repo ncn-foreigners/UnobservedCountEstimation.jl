@@ -5,5 +5,5 @@ using Test
 
 @testset "UnobservedCountEstimation.jl" begin
     # TODO  
-    @test UnobservedCountEstimation.placeholder(65) == 65
+    @test placeholder(65) == 65
 end
