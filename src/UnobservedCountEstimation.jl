@@ -3,8 +3,9 @@ module UnobservedCountEstimation
 # Write your package code here.
 
 # Imports
-using Optim, Statistics, GLM, Distributions, DataFrames
+using Optim, Statistics, GLM, Distributions, DataFrames, SpecialFunctions, LinearAlgebra
 
+include("zhang_likelihood.jl")
 include("original_model.jl")
 include("interface.jl")
 
