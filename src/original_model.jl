@@ -28,7 +28,7 @@ function zhang_model(m, N, n; start = "glm")
     #= result   = optimize(log_l_f, [start[1], start[2], 1], Newton(); inplace = false)
     result_1 = optimize(log_l_f, grad_l_f, [start[1], start[2], 1], Newton(); inplace = false) =#
     # TODO :: dependent α, β
-    optim_problem = optimize(log_l_f, grad_l_f, hes_l_f, [start[1], start[2], 1], Newton(); inplace = false)
+    optim_problem = optimize(log_l_f, grad_l_f, hes_l_f, [start[1], start[2], 0], Newton(); inplace = false)
     α̂ = optim_problem.minimizer[1]
     β̂ = optim_problem.minimizer[2]
     ϕ̂ = optim_problem.minimizer[3]
