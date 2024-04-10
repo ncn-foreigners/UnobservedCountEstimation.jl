@@ -7,9 +7,14 @@ using Optim, Statistics, GLM, Distributions, DataFrames, SpecialFunctions, Linea
 
 include("zhang_likelihood.jl")
 include("original_model.jl")
+
+include("binomial_likelihood.jl")
+include("binomial_model.jl")
+
 include("interface.jl")
 
 export placeholder
 export zhang_model
+export binomial_model
 
 end
