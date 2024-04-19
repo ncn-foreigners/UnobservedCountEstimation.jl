@@ -4,11 +4,12 @@ module UnobservedCountEstimation
 
 # Imports
 using Optim, Statistics, GLM, Distributions, DataFrames, SpecialFunctions, LinearAlgebra
+using Integrals
 
 include("zhang_likelihood.jl")
 include("original_model.jl")
 
-include("binomial_likelihood.jl")
+include("binomial_model_sampling.jl")
 include("binomial_model.jl")
 
 include("interface.jl")
