@@ -1,6 +1,7 @@
 function binomial_model(m, N, n; start = "glm", iter = 2000, 
                         warm_up = floor(Int, iter / 2), grid,
-                        save_simulation = true)
+                        save_simulation = true,
+                        k_prior = :auto, θ_prior = :auto, Σ_prior = :auto)
     # TODO:: add X, Z arguments and then methods for type X/Z nothing or formula
     df = DataFrame(
         y = m,
@@ -14,15 +15,34 @@ function binomial_model(m, N, n; start = "glm", iter = 2000,
     Z = ones(length(n))
     Z = Z[:, :]
 
-    start = [M]
+    start = Vector{Any}([m])
+    mm = nothing
 
     if start == "glm"
-        append!(start, coef(glm(@formula(y ~ x1 + x2 + 0), df, Poisson(), LogLink())))
+        mm = glm(@formula(y ~ x1 + x2 + 0), df, Poisson(), LogLink())
+        append!(start, coef(mm))
     else
-        append!(start, coef(lm(@formula(log(y) ~ x1 + x2 + 0), df)))
+        mm = lm(@formula(log(y) ~ x1 + x2 + 0), df)
+        append!(start, coef(mm))
     end # end
-    
-    res = gibbs_sampler_binomial_model(start, grid, iter, n, N, m)
 
-    # return object with summary statistics and 
+    # Asigning priors
+    if Σ_prior == :auto
+        Σ_prior = vcov(mm)
+    end
+    
+    if θ_prior == :auto
+        θ_prior = diag(Σ_prior) ./ start[(end-1):end]
+    end
+
+    if k_prior == :auto
+        k_prior = start[(end-1):end] ./ θ_prior
+    end
+
+    # TODO warnings if bad prior
+    
+    # TODO
+    res = gibbs_sampler_binomial_model(start, grid, iter, n, N, m, k_prior, θ_prior, Σ_prior)
+
+    # return object with summary statistics and
 end # end function
