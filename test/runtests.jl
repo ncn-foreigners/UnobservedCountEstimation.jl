@@ -35,9 +35,16 @@ end
     parm  = reduce(vcat, [df[:, :M], [γ₁], [γ₂]])
 
     @test res_a ≈ parm rtol = .25
+    @test all([quantile(a[k], 2.5 / 100) <= df[k, :M] <= quantile(a[k], 97.5 / 100) for k in 1:Q])
     @test res_b ≈ parm rtol = .25
+    @test all([quantile(b[k], 2.5 / 100) <= df[k, :M] <= quantile(b[k], 97.5 / 100) for k in 1:Q])
 
     @test res_a[(end-1):end] ≈ [γ₁, γ₂] rtol = .06
+    # this does not fit in 95% interval but this is probably just due to chance
+    @test quantile(a[end - 1],         0) <= γ₁ <= quantile(a[end],     95   / 100)
+    @test quantile(a[end],     2.5 / 100) <= γ₂ <= quantile(a[end],     97.5 / 100)
     @test res_b[(end-1):end] ≈ [γ₁, γ₂] rtol = .06
+    @test quantile(b[end - 1], 2.5 / 100) <= γ₁ <= quantile(b[end - 1], 97.5 / 100)
+    @test quantile(b[end],     2.5 / 100) <= γ₂ <= quantile(b[end],     97.5 / 100)
 end
 
