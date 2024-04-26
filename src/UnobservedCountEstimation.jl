@@ -10,7 +10,6 @@ using Distributions
 using DataFrames
 using SpecialFunctions
 using LinearAlgebra
-using Integrals
 using Copulas
 
 include("zhang_likelihood.jl")

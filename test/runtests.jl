@@ -20,8 +20,8 @@ end
 #= @testset "binomial_model.jl" begin
     df = CSV.read(pwd() * "/test_csv_binomial.csv", DataFrame)
 
-    a = binomial_model(df[:, :m], df[:, :N], df[:, :n]; start = "glm")
-    b = binomial_model(df[:, :m], df[:, :N], df[:, :n]; start =  "lm")
+    a = binomial_model(df[:, :m], df[:, :N], df[:, :n]; start = "glm", grid = .3:.01:3)
+    b = binomial_model(df[:, :m], df[:, :N], df[:, :n]; start =  "lm", grid = .3:.01:3)
 
     @test a[1][4] ≈ sum(df[:, :ξ]) rtol=.075
     @test a[1][4] ≈ sum(df[:, :M]) rtol=.075
