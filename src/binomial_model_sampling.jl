@@ -27,6 +27,8 @@ function sample_gamma_1_cond(grid, n, N, γ₂, M, m, k_prior, θ_prior, Σ_prio
         exp(sum(res)) * pdf(copula, c) * pdf(distr_prior_marginal, x)
     end # end funciton
     evaluated_denisty = density_function.(grid1)
+    # temporary solution
+    evaluated_denisty[isnan.(evaluated_denisty)] .= 0
     #println(evaluated_denisty)
     evaluated_denisty ./= sum(evaluated_denisty)
     # sample acording to evaluation
@@ -52,6 +54,8 @@ function sample_gamma_2_cond(grid, n, N, γ₁, M, m, k_prior, θ_prior, Σ_prio
         exp(sum(res)) * pdf(copula, c) * pdf(distr_prior_marginal, x)
     end # end funciton
     evaluated_denisty = density_function.(grid1)
+    # temporary solution
+    evaluated_denisty[isnan.(evaluated_denisty)] .= 0
     #println(evaluated_denisty)
     evaluated_denisty ./= sum(evaluated_denisty)
     # sample acording to evaluation

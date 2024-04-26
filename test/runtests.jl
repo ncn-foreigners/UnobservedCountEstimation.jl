@@ -19,6 +19,7 @@ end
 @testset "binomial_model.jl" begin
     Random.seed!(1234)
     df = CSV.read(pwd() * "/test_csv_binomial_no_random_effect.csv", DataFrame)
+    #df = CSV.read(pwd() * "/test/test_csv_binomial_no_random_effect.csv", DataFrame)
     γ₁ = 0.8983650801874796
     γ₂ = 1.578563831198963
     Σ  = [1 .5; .5 1]
