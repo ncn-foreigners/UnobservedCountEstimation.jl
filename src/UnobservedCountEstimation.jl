@@ -15,7 +15,8 @@ using Copulas
 include("zhang_likelihood.jl")
 include("original_model.jl")
 
-include("binomial_model_sampling.jl")
+include("binomial_model_sampling_no_random_effect.jl")
+include("binomial_model_sampling_random_effect.jl")
 include("binomial_model.jl")
 
 include("interface.jl")
