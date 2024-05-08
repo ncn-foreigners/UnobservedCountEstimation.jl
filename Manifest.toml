@@ -2,7 +2,7 @@
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "63cdc85d1fdd813faea15e00c39934e64d241d21"
+project_hash = "7910a35abe9d9baf67556586fda9d923a7ca2b7b"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "401c87ea437e9d5b74dc283a77198ad75e50811f"
@@ -666,6 +666,12 @@ version = "0.5.6"
 [[deps.Printf]]
 deps = ["Unicode"]
 uuid = "de0858da-6303-5e67-8744-51eddeeeb8d7"
+
+[[deps.ProgressMeter]]
+deps = ["Distributed", "Printf"]
+git-tree-sha1 = "763a8ceb07833dd51bb9e3bbca372de32c0605ad"
+uuid = "92933f4c-e287-5a05-a399-4b506db050ca"
+version = "1.10.0"
 
 [[deps.QuadGK]]
 deps = ["DataStructures", "LinearAlgebra"]

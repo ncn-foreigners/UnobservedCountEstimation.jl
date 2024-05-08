@@ -12,6 +12,7 @@ function sample_gamma_1_cond(grid, n, N, γ₂, M, m, k_prior, θ_prior, Σ_prio
     #error("bcd")
 
     # shift grid towards the mean since it is most probable
+    # TODO:: shift towards previous value?
     grid1 = grid #.* (k_prior[1] * θ_prior[1])
     # get unscaled density function and evaluate it on a grid
     function density_function(x)
@@ -22,11 +23,10 @@ function sample_gamma_1_cond(grid, n, N, γ₂, M, m, k_prior, θ_prior, Σ_prio
         c = [c[ii][1] for ii in eachindex(c)]
 
         #res = (μ .^ m) .* ((1 .- μ) .^ (M .- m))
-        res = zeros(BigFloat, length(M))
-        res .+= m .* log.(μ) + (M - m) .* log.(1 .- μ) - exp.(lξ) + M .* lξ
+        res = BigFloat.(m .* log.(μ) + (M - m) .* log.(1 .- μ) - exp.(lξ) + M .* lξ)
         exp(sum(res)) * pdf(copula, c) * pdf(distr_prior_marginal, x)
     end # end funciton
-    evaluated_denisty = density_function.(BigFloat.(grid1))
+    evaluated_denisty = density_function.(grid1)
     # temporary solution
     evaluated_denisty[isnan.(evaluated_denisty)] .= 0
     #println(evaluated_denisty)
@@ -38,10 +38,12 @@ end # end funciton
 function sample_gamma_2_cond(grid, n, N, γ₁, M, m, k_prior, θ_prior, Σ_prior)
     distr_prior_marginal = Gamma(k_prior[2], θ_prior[2])
     copula = GaussianCopula(Σ_prior)
+    method = "grid"
+    # method = "Integral"
     # shift grid towards the mean since it is most probable
     grid1 = grid #.* (k_prior[2] * θ_prior[2])
     # get unscaled density function and evaluate it on a grid
-    function density_function(x)
+    function density_function(x, p)
         μ = (N .^ γ₁) .* ((n ./ N) .^ x)
         μ = 1 ./ (1 .+ 1 ./ μ)
         #ξ = N .^ γ₁
@@ -49,17 +51,41 @@ function sample_gamma_2_cond(grid, n, N, γ₁, M, m, k_prior, θ_prior, Σ_prio
         c = [c[ii][1] for ii in eachindex(c)]
 
         #res = (μ .^ m) .* ((1 .- μ) .^ (M .- m))
-        res = zeros(BigFloat, length(M))
-        res .+= m .* log.(μ) + (M - m) .* log.(1 .- μ)
+        res = BigFloat.(m .* log.(μ) + (M - m) .* log.(1 .- μ))
         exp(sum(res)) * pdf(copula, c) * pdf(distr_prior_marginal, x)
     end # end funciton
-    evaluated_denisty = density_function.(BigFloat.(grid1))
-    # temporary solution
-    evaluated_denisty[isnan.(evaluated_denisty)] .= 0
-    #println(evaluated_denisty)
-    evaluated_denisty ./= sum(evaluated_denisty)
-    # sample acording to evaluation
-    grid1[rand(Categorical(evaluated_denisty))]
+    
+    if method == "grid"
+        evaluated_denisty = density_function.(grid1, 1)
+        # temporary solution
+        evaluated_denisty[isnan.(evaluated_denisty)] .= 0
+        #println(evaluated_denisty)
+        evaluated_denisty ./= sum(evaluated_denisty)
+        # sample acording to evaluation
+        res = grid1[rand(Categorical(evaluated_denisty))]
+    elseif method == "Integral"
+        #= U = rand(Uniform())
+        function fn(x, p)
+            y = density_function.(x, 1)
+            if isnan(y)
+                y = 0
+            end # end if
+            y
+        end # end function
+        prob = IntegralProblem(fn, [0, Inf])
+        setprecision(40) do
+            R = solve(prob, HCubatureJL(), reltol = 1e-10, abstol = 1e-10)
+            prob1 = x -> IntegralProblem(fn, [0, x[1]])
+            a = optimize(
+                x -> (reduce(vcat, solve(prob1(x), HCubatureJL())) / R[1] .- U) ^ 2,
+                [.5], method = LBFGS(), 
+                iterations = 100
+            )
+            res = a.minimizer
+        end # end set precision =#
+        error("Work in progress")
+    end # end if
+    res
 end # end funciton
 
 function sample_M_cond(n, N, m, γ₁, γ₂)
@@ -80,6 +106,7 @@ function gibbs_sampler_binomial_model(start, grid, iter, n, N, m, k_prior, θ_pr
     γ₂ = start[3]
 
     storage = reduce(vcat, [[[M[k]] for k in eachindex(M)], [[γ₁]], [[γ₂]]])
+    prog = Progress(iter, "Sampling progress ...")
 
     for k in 1:iter
         # sample M  conditional on γ₁ and γ₂
@@ -103,6 +130,7 @@ function gibbs_sampler_binomial_model(start, grid, iter, n, N, m, k_prior, θ_pr
         end # end for
         append!(storage[end - 1], γ₁)
         append!(storage[end], γ₂)
+        next!(prog)
     end # end for
     # return stored values
     storage

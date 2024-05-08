@@ -11,6 +11,7 @@ using DataFrames
 using SpecialFunctions
 using LinearAlgebra
 using Copulas
+using ProgressMeter
 
 include("zhang_likelihood.jl")
 include("original_model.jl")
