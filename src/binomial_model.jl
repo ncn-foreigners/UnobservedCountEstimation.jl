@@ -1,7 +1,8 @@
 function binomial_model(m, N, n; start = "glm", iter = 2000, 
                         warm_up = floor(Int, iter / 2), grid,
                         save_simulation = true,
-                        k_prior = :auto, θ_prior = :auto, Σ_prior = :auto)
+                        k_prior = :auto, θ_prior = :auto, 
+                        Σ_prior = :auto, rand_eff = false)
     # TODO:: add X, Z arguments and then methods for type X/Z nothing or formula
     df = DataFrame(
         y = m,
@@ -40,9 +41,15 @@ function binomial_model(m, N, n; start = "glm", iter = 2000,
     end
 
     # TODO warnings if bad prior
-    
-    # TODO
-    res = gibbs_sampler_binomial_model(start, grid, iter, n, N, m, k_prior, θ_prior, Σ_prior)
+    res = nothing
+    if !rand_eff
+        res = gibbs_sampler_binomial_model(start, grid, iter, n, N, m, k_prior, θ_prior, Σ_prior)
+    else
+        push!(start, ones(Float64, length(m)))
+        res = gibbs_sampler_binomial_model_random_eff(start, grid, iter, n, N, m, k_prior, θ_prior, Σ_prior)
+    end # end if 
+
 
     # return object with summary statistics and
+    res
 end # end function

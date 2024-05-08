@@ -33,11 +33,26 @@ end
     parm  = reduce(vcat, [df[:, :M], [γ₁], [γ₂]])
 
     @test res_a ≈ parm rtol = .25
-    @test all([quantile(a[k], 2.5 / 100) <= df[k, :M] <= quantile(a[k], 97.5 / 100) for k in 1:Q])
+    @test all(quantile.(a[1:Q], 2.5 / 100) <= df[:, :M] <= quantile.(a[1:Q], 97.5 / 100))
     
     @test res_a[(end-1):end] ≈ [γ₁, γ₂] rtol = .06
     # this does not fit in 95% interval but this is probably just due to chance
     @test quantile(a[end - 1],         0) <= γ₁ <= quantile(a[end],     95   / 100)
     @test quantile(a[end],     2.5 / 100) <= γ₂ <= quantile(a[end],     97.5 / 100)
+
+    # new data
+    df = CSV.read(pwd() * "/test_csv_binomial_with_random_effect.csv", DataFrame)
+    #df = CSV.read(pwd() * "/test/test_csv_binomial_with_random_effect.csv", DataFrame)
+    γ₁ = 0.8983650801874796
+    b = binomial_model(df[:, :m], df[:, :N], df[:, :n]; start =  "lm", grid = .3:.01:3, k_prior = k, θ_prior = θ, Σ_prior = Σ, iter = 1_000, rand_eff = true)
+
+    res_b = reduce(vcat, [[mean(b[k]) for k in 1:Q], [mean(b[end-1])]])
+    parm  = reduce(vcat, [df[:, :M], [γ₁]])
+
+    @test res_b ≈ parm rtol = .25
+    @test sum(quantile.(b[1:Q], 2.5 / 100) .<= df[:, :M] .<= quantile.(b[1:Q], 97.5 / 100)) > 18
+    
+    @test res_b[end] ≈ γ₁ rtol = .08
+    @test quantile(b[end-1], 2.5 / 100) <= γ₁ <= quantile(b[end-1], 97.5 / 100)
 end
 

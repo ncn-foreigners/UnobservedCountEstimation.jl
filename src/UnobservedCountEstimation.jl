@@ -8,6 +8,7 @@ using Statistics
 using GLM
 using Distributions
 using DataFrames
+using Integrals, FastGaussQuadrature
 using SpecialFunctions
 using LinearAlgebra
 using Copulas
