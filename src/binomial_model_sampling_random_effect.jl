@@ -71,7 +71,9 @@ function sample_u_cond_random_eff(n, N, m, M, γ₁, γ₂; prec = 40)
         setprecision(prec) do
             # TODO:: this could be much faster if broadcasted but GaussLegendre() doesn't work in R^d where d=>2
             f(x, p) = exp(BigFloat(m[k] * log(x) + (M - m)[k] * log(1 - x * μ[k]) + logpdf(beta_distr[k], x)))
-            ff(x)   = solve(IntegralProblem(f, [0, x]), GaussLegendre(), reltol = 1e-10, abstol = 1e-10)
+            # TODO this fails for older integrals.jl versions
+            prob = IntegralProblem(f, (0, x))
+            ff(x)   = solve(prob, GaussLegendre(), reltol = 1e-10, abstol = 1e-10)
             R = ff(1)
             a = optimize(x -> (ff(x)[1] / R[1] - U[k]) ^ 2, 0, 1, Brent(), rel_tol = 1e-10)
             push!(res, a.minimizer)
