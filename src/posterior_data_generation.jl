@@ -6,7 +6,7 @@ end
 # MAP or Mean
 function posterior_data_generation(object::BayesianUnobservedCountModel; est = "MAP", rep = 500)
    par = object.coefs[est]
-   Q = length.(object.:data)[1]
+   Q = object.Q
    
    M  = par[1:Q]
    γ₁ = par[end - 1]
