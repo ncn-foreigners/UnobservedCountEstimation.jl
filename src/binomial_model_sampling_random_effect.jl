@@ -15,11 +15,12 @@ function sample_gamma_1_cond_random_eff(grid, n, N, γ₂, M, m, u, k_prior, θ_
         res = BigFloat.(m .* log.(μ) + (M - m) .* log.(1 .- u .* μ) - exp.(lξ) + M .* lξ)
         exp(sum(res)) * pdf(copula, c) * pdf(distr_prior_marginal, x)
     end # end funciton
-    evaluated_denisty = density_function.(grid)
+
+    evaluated_denisty = density_function.(grid)    
     # temporary solution
     evaluated_denisty[isnan.(evaluated_denisty)] .= 0
-    #println(evaluated_denisty)
     evaluated_denisty ./= sum(evaluated_denisty)
+
     # sample acording to evaluation
     grid[rand(Categorical(evaluated_denisty))]
 end # end funciton
@@ -39,10 +40,10 @@ function sample_gamma_2_cond_random_eff(grid, n, N, γ₁, M, m, u, k_prior, θ_
         res = BigFloat.(m .* log.(μ) + (M - m) .* log.(1 .- u .* μ))
         exp(sum(res)) * pdf(copula, c) * pdf(distr_prior_marginal, x)
     end # end funciton
+
     evaluated_denisty = density_function.(grid)
     # temporary solution
     evaluated_denisty[isnan.(evaluated_denisty)] .= 0
-    #println(evaluated_denisty)
     evaluated_denisty ./= sum(evaluated_denisty)
     # sample acording to evaluation
     grid[rand(Categorical(evaluated_denisty))]
@@ -59,7 +60,7 @@ function sample_M_cond_random_eff(n, N, m, γ₁, γ₂, u)
     m + M_minus_m
 end # end funciton
 
-function sample_u_cond_random_eff(n, N, m, M, γ₁, γ₂; prec = 40)
+function sample_u_cond_random_eff(n, N, m, M, γ₁, γ₂; prec = 40, method)
     # compute normalization factor
     μ = (N .^ γ₁) .* ((n ./ N) .^ γ₂)
     μ = 1 ./ (1 .+ 1 ./ μ)
@@ -67,22 +68,38 @@ function sample_u_cond_random_eff(n, N, m, M, γ₁, γ₂; prec = 40)
     U = rand(Uniform(), length(N))
 
     res = Vector{Float64}()
-    for k in eachindex(M)
-        setprecision(prec) do
-            # TODO:: this could be much faster if broadcasted but GaussLegendre() doesn't work in R^d where d=>2
-            f(x, p) = exp(BigFloat(m[k] * log(x) + (M - m)[k] * log(1 - x * μ[k]) + logpdf(beta_distr[k], x)))
-            # TODO this fails for older integrals.jl versions
-            prob(x) = IntegralProblem(f, (0, x))
-            ff(x)   = solve(prob(x), GaussLegendre(), reltol = 1e-10, abstol = 1e-10)
-            R = ff(1)
-            a = optimize(x -> (ff(x)[1] / R[1] - U[k]) ^ 2, 0, 1, Brent(), rel_tol = 1e-10)
-            push!(res, a.minimizer)
-        end # end set precision
-    end # end for
+    
+    if method == "exact"
+        for k in eachindex(M)
+            setprecision(prec) do
+                # TODO:: this could be much faster if broadcasted but GaussLegendre() doesn't work in R^d where d=>2
+                f(x, p) = exp(BigFloat(m[k] * log(x) + (M - m)[k] * log(1 - x * μ[k]) + logpdf(beta_distr[k], x)))
+                # this is deprecated
+                # prob(x) = IntegralProblem(f, (0, x))
+                # Pkg.status("Integrals")
+                # for older versions:
+                prob(x) = IntegralProblem(f, 0, x)
+                ff(x)   = solve(prob(x), GaussLegendre(), reltol = 1e-10, abstol = 1e-10)
+                R = ff(1)
+                a = optimize(x -> (ff(x)[1] / R[1] - U[k]) ^ 2, 0, 1, Brent(), rel_tol = 1e-10)
+                push!(res, a.minimizer)
+            end # end set precision
+        end # end for
+    else 
+        grid = 0.001:0.001:(1-0.001)
+        f(x, k) = exp(BigFloat(m[k] * log(x) + (M - m)[k] * log(1 - x * μ[k]) + logpdf(beta_distr[k], x)))
+        for k in eachindex(M)
+            evaluated_denisty = f.(grid, k)
+            evaluated_denisty[isnan.(evaluated_denisty)] .= 0
+            evaluated_denisty ./= sum(evaluated_denisty)
+
+            push!(res, grid[rand(Categorical(evaluated_denisty))])
+        end # ned for
+    end # end if
     res
 end # end funciton
 
-function gibbs_sampler_binomial_model_random_eff(start, grid, iter, n, N, m, k_prior, θ_prior, Σ_prior)
+function gibbs_sampler_binomial_model_random_eff(start, grid, iter, n, N, m, k_prior, θ_prior, Σ_prior, u_method)
     # create storage vectors
     M  = start[1]
     γ₁ = start[2]
@@ -90,14 +107,14 @@ function gibbs_sampler_binomial_model_random_eff(start, grid, iter, n, N, m, k_p
     u  = start[4]
 
     storage = reduce(vcat, [[[M[k]] for k in eachindex(M)], [[u[k]] for k in eachindex(M)], [[γ₁]], [[γ₂]]])
-    prog = Progress(iter, "Sampling progress ...")
+    prog = Progress(iter; desc = "Sampling progress ...")
 
-    for k in 1:iter
+    for _ in 1:iter
         # sample M  conditional on γ₁ and γ₂
         M = sample_M_cond_random_eff(n, N, m, γ₁, γ₂, u)
         #println(M)
         u = sample_u_cond_random_eff(
-            n, N, m, M, γ₁, γ₂; prec = 40
+            n, N, m, M, γ₁, γ₂; prec = 40, method = u_method
         )
         # sample γ₁ conditional on M  and γ₂
         γ₁ = sample_gamma_1_cond_random_eff(

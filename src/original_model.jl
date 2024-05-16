@@ -35,5 +35,7 @@ function zhang_model(m, N, n; start = "glm")
     ξ̂ = sum(N .^ α̂)
     #[coef(ols), coef(mm)]
     #[start, log_l, grad_l, hes_l]
-    [[α̂, β̂, ϕ̂, ξ̂], optim_problem]
+
+    # return structure
+    ZhangUnobservedCountModel([α̂, β̂, ϕ̂, ξ̂], optim_problem)
 end # end function
