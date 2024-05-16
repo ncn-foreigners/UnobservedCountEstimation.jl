@@ -10,11 +10,11 @@ using CSV, DataFrames, Random, Statistics
     a = zhang_model(df[:, :m], df[:, :N], df[:, :n]; start = "glm")
     b = zhang_model(df[:, :m], df[:, :N], df[:, :n]; start =  "lm")
 
-    @test sum(a.coefs["MAP"][1:20]) ≈ sum(df[:, :ξ]) rtol=.075
-    @test sum(a.coefs["MAP"][1:20]) ≈ sum(df[:, :M]) rtol=.075
+    @test a.coefs[4] ≈ sum(df[:, :ξ]) rtol=.075
+    @test a.coefs[4] ≈ sum(df[:, :M]) rtol=.075
 
-    @test sum(b.coefs["MAP"][1:20]) ≈ sum(df[:, :ξ]) rtol=.075
-    @test sum(b.coefs["MAP"][1:20]) ≈ sum(df[:, :M]) rtol=.075
+    @test b.coefs[4] ≈ sum(df[:, :ξ]) rtol=.075
+    @test b.coefs[4] ≈ sum(df[:, :M]) rtol=.075
 end # end test "zhang_model.jl"
 
 @testset "binomial_model.jl" begin
