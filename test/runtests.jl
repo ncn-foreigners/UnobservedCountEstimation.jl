@@ -55,13 +55,13 @@ end # end test "zhang_model.jl"
         start =  "lm", grid = .3:.01:3, 
         k_prior = k, theta_prior = θ, 
         sigma_prior = Σ, iter = 1_000, 
-        rand_eff = true, u_method = "grid"
+        rand_eff = true
     )
 
     res_b = b.coefs["Mean"][1:(Q+1)]
     parm  = reduce(vcat, [df[:, :M], [γ₁]])
 
-    @test res_b[1:M] ≈ df[:, :M] rtol = .25
+    @test res_b[1:Q] ≈ df[:, :M] rtol = .25
     @test sum(quantile.(b.sim_res[1:Q], 2.5 / 100) .<= df[:, :M] .<= quantile.(b.sim_res[1:Q], 97.5 / 100)) > 18
     
     @test res_b[Q + 1] ≈ γ₁ rtol = .08
