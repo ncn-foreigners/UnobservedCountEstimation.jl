@@ -60,42 +60,73 @@ function sample_M_cond_random_eff(n, N, m, γ₁, γ₂, u)
     m + M_minus_m
 end # end funciton
 
-function sample_u_cond_random_eff(n, N, m, M, γ₁, γ₂; prec = 40, method)
+function sample_u_cond_random_eff(n, N, m, M, γ₁, γ₂; prec = 80, method)
     # compute normalization factor
     μ = (N .^ γ₁) .* ((n ./ N) .^ γ₂)
     μ = 1 ./ (1 .+ 1 ./ μ)
     beta_distr = Beta.(n, N - n)
     U = rand(Uniform(), length(N))
-
     res = Vector{Float64}()
+    num_nodes = 1_000_000_000
     
-    if method == "exact"
+    if method == "diffeq"
+        # TODO:: this could be much faster if broadcasted but GaussLegendre() doesn't work in R^d where d=>2
+        #=for k in eachindex(M)
+            ff(x, p, t) = exp(-BigFloat(m[k] * log(x) + (M - m)[k] * log(1 - x * μ[k]) + logpdf(beta_distr[k], x)))
+            setprecision(prec) do
+                prob = ODEProblem(ff, 0, (0, U[k]))
+                sol = solve(prob, Tsit5(), reltol = 1e-8, abstol = 1e-8)
+                println(sol)
+                error("abc")
+            end # end setprecision
+        end # end for
+        =#
+        error("Not yet done")
+    elseif method == "exact"
         for k in eachindex(M)
             setprecision(prec) do
                 # TODO:: this could be much faster if broadcasted but GaussLegendre() doesn't work in R^d where d=>2
                 f(x, p) = exp(BigFloat(m[k] * log(x) + (M - m)[k] * log(1 - x * μ[k]) + logpdf(beta_distr[k], x)))
                 # this is deprecated
-                # prob(x) = IntegralProblem(f, (0, x))
-                # Pkg.status("Integrals")
-                # for older versions:
-                prob(x) = IntegralProblem(f, 0, x)
-                ff(x)   = solve(prob(x), GaussLegendre(), reltol = 1e-10, abstol = 1e-10)
+                prob = nothing
+                try 
+                    # since Integrals.jl 4.0
+                    prob(x) = IntegralProblem(f, (0, x))
+                catch e
+                    if isa(e, MethodError)
+                        # for older versions of Integrals.jl:
+                        prob(x) = IntegralProblem(f, 0, x)
+                    else
+                        throw(ArgumentError("Defining Integral problem in sampling posterior conditional u failed that is not due to Integrals.jl version incompatibility."))
+                    end # end if
+                end # end try-catch                
+                ff(x) = solve(prob(x), Integrals.GaussLegendre(), reltol = 1e-10, abstol = 1e-10)
                 R = ff(1)
-                a = optimize(x -> (ff(x)[1] / R[1] - U[k]) ^ 2, 0, 1, Brent(), rel_tol = 1e-10)
+                a = optimize(x -> (ff(x)[1] / R[1] - U[k]) ^ 2, 0, 1, Optim.Brent(), rel_tol = 1e-10)
                 push!(res, a.minimizer)
             end # end set precision
         end # end for
-    else 
-        grid = 0.001:0.001:(1-0.001)
-        f(x, k) = exp(BigFloat(m[k] * log(x) + (M - m)[k] * log(1 - x * μ[k]) + logpdf(beta_distr[k], x)))
+    elseif method == "grid"
+        grid = 0.0001:0.00001:(1-0.0001)
         for k in eachindex(M)
-            evaluated_denisty = f.(grid, k)
+            evaluated_denisty = nothing
+            evaluated_denisty = exp.(BigFloat.(m[k] * log.(grid) + (M - m)[k] * log.(1 .- grid .* μ[k]) + logpdf.(beta_distr[k], grid)))
             evaluated_denisty[isnan.(evaluated_denisty)] .= 0
             evaluated_denisty ./= sum(evaluated_denisty)
 
             push!(res, grid[rand(Categorical(evaluated_denisty))])
-        end # ned for
+        end # end for
     end # end if
+
+    #=
+    println(all(0 .< res .< 1))
+    println(res[.!(0 .< res .< 1)])
+    println(M[.!(0 .< res .< 1)])
+    println(μ[.!(0 .< res .< 1)])
+    println(m[.!(0 .< res .< 1)])
+    println(μ)
+    error("abc") =#
+
     res
 end # end funciton
 

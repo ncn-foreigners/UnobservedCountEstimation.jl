@@ -54,7 +54,7 @@ end # end test "zhang_model.jl"
         df[:, :m], df[:, :N], df[:, :n]; 
         start =  "lm", grid = .3:.01:3, 
         k_prior = k, theta_prior = θ, 
-        sigma_prior = Σ, iter = 1_000, 
+        sigma_prior = Σ, iter = 200, 
         rand_eff = true
     )
 

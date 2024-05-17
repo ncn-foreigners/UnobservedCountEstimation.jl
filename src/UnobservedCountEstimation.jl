@@ -4,9 +4,9 @@ module UnobservedCountEstimation
 using Copulas
 using DataFrames
 using Distributions
-using FastGaussQuadrature
 using GLM
 using Integrals
+using FastGaussQuadrature
 using LinearAlgebra
 using Optim
 using ProgressMeter
