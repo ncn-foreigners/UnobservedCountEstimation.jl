@@ -88,18 +88,7 @@ function sample_u_cond_random_eff(n, N, m, M, γ₁, γ₂; prec = 80, method)
                 # TODO:: this could be much faster if broadcasted but GaussLegendre() doesn't work in R^d where d=>2
                 f(x, p) = exp(BigFloat(m[k] * log(x) + (M - m)[k] * log(1 - x * μ[k]) + logpdf(beta_distr[k], x)))
                 # this is deprecated
-                prob = nothing
-                try 
-                    # since Integrals.jl 4.0
-                    prob(x) = IntegralProblem(f, (0, x))
-                catch e
-                    if isa(e, MethodError)
-                        # for older versions of Integrals.jl:
-                        prob(x) = IntegralProblem(f, 0, x)
-                    else
-                        throw(ArgumentError("Defining Integral problem in sampling posterior conditional u failed that is not due to Integrals.jl version incompatibility."))
-                    end # end if
-                end # end try-catch                
+                prob(x) = IntegralProblem(f, (0, x))        
                 ff(x) = solve(prob(x), Integrals.GaussLegendre(), reltol = 1e-10, abstol = 1e-10)
                 R = ff(1)
                 a = optimize(x -> (ff(x)[1] / R[1] - U[k]) ^ 2, 0, 1, Optim.Brent(), rel_tol = 1e-10)
@@ -107,7 +96,7 @@ function sample_u_cond_random_eff(n, N, m, M, γ₁, γ₂; prec = 80, method)
             end # end set precision
         end # end for
     elseif method == "grid"
-        grid = 0.0001:0.00001:(1-0.0001)
+        grid = 0.0001:0.0001:(1-0.0001)
         for k in eachindex(M)
             evaluated_denisty = nothing
             evaluated_denisty = exp.(BigFloat.(m[k] * log.(grid) + (M - m)[k] * log.(1 .- grid .* μ[k]) + logpdf.(beta_distr[k], grid)))
