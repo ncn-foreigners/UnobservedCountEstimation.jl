@@ -67,7 +67,7 @@ function sample_u_cond_random_eff(n, N, m, M, γ₁, γ₂; prec = 80, method)
     beta_distr = Beta.(n, N - n)
     U = rand(Uniform(), length(N))
     res = Vector{Float64}()
-    num_nodes = 1_000_000_000
+    #num_nodes = 1_000_000_000
     
     if method == "diffeq"
         # TODO:: this could be much faster if broadcasted but GaussLegendre() doesn't work in R^d where d=>2
@@ -91,6 +91,22 @@ function sample_u_cond_random_eff(n, N, m, M, γ₁, γ₂; prec = 80, method)
                 prob(x) = IntegralProblem(f, (0, x))        
                 ff(x) = solve(prob(x), Integrals.GaussLegendre(), reltol = 1e-10, abstol = 1e-10)
                 R = ff(1)
+                #= 
+                function gr(x)
+                    x = x[1]
+                    2 * (ff(x)[1] / R[1] - U[k]) * f(x, 1) / R[1]
+                end # end function
+                function hs(x)
+                    x   = x[1]
+                    p1  = 2 * (f(x, 1) / R[1]) ^ 2
+
+                    p2  = (1 - x) ^ (N[k] - n[k]) * x ^ (n[k] + m[k] - 2) * (1 - μ[k] * x) ^ (M[k] - m[k])
+                    p2 *= (N[k] + M[k] - 2) * μ[k] * x ^ 2 + (-μ[k] * n[k] + (1 - M[k]) * μ[k] - m[k] - N[k] + 2) * x + n[k] + m[k] - 1
+                    p2 /= (1 - x) ^ 2 * (1 - μ[k] * x)
+                    p2 *= 2 * (ff(x)[1] / R[1] - U[k]) / R[1]
+                    p1 + p2 / R[1]
+                end # end funciton =#
+                #a = optimize(x -> (ff(x)[1] / R[1] - U[k]) ^ 2, gr, hs, [.5], Optim.Newton(); inplace = false)
                 a = optimize(x -> (ff(x)[1] / R[1] - U[k]) ^ 2, 0, 1, Optim.Brent(), rel_tol = 1e-10)
                 push!(res, a.minimizer)
             end # end set precision

@@ -1,6 +1,7 @@
 module UnobservedCountEstimation
 
 # Imports
+# TODO:: explicit function Imports instead of using everything
 using Copulas
 using DataFrames
 using Distributions
@@ -12,6 +13,7 @@ using Optim
 using ProgressMeter
 using SpecialFunctions
 using Statistics
+using HypergeometricFunctions
 # TODO:: StatsBase.jl compatibility
 # TODO:: Turing.jl    compatibility
 
