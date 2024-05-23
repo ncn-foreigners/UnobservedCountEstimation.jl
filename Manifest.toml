@@ -2,7 +2,7 @@
 
 julia_version = "1.10.2"
 manifest_format = "2.0"
-project_hash = "18400d7847a4a2861ac95edee3b678e21d64e1d1"
+project_hash = "3e7eef2be031d31b50e076fd1144ec85dd5aef91"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "daf26bbdec60d9ca1c0003b70f389d821ddb4224"
@@ -932,6 +932,12 @@ deps = ["PrecompileTools"]
 git-tree-sha1 = "a04cabe79c5f01f4d723cc6704070ada0b9d46d5"
 uuid = "892a3eda-7b42-436c-8928-eab12a02cf0e"
 version = "0.3.4"
+
+[[deps.StyledStrings]]
+deps = ["TOML"]
+git-tree-sha1 = "d108f10ee6a0f3955ed73b1ddf7dda09b7de6b21"
+uuid = "f489334b-da3d-4c2e-b8f0-e476e12c162b"
+version = "1.0.1"
 
 [[deps.SuiteSparse]]
 deps = ["Libdl", "LinearAlgebra", "Serialization", "SparseArrays"]
