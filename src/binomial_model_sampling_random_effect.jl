@@ -65,7 +65,7 @@ function sample_u_cond_random_eff(n, N, m, M, γ₁, γ₂; prec = 80, method)
     μ = (N .^ γ₁) .* ((n ./ N) .^ γ₂)
     μ = 1 ./ (1 .+ 1 ./ μ)
     beta_distr = Beta.(n, N - n)
-    U = rand(Uniform(), length(N))
+    U = rand(Uniform(0, 1), length(N))
     res = Vector{Float64}()
     #num_nodes = 1_000_000_000
     
@@ -88,13 +88,16 @@ function sample_u_cond_random_eff(n, N, m, M, γ₁, γ₂; prec = 80, method)
                 # TODO:: this could be much faster if broadcasted but GaussLegendre() doesn't work in R^d where d=>2
                 f(x, p) = exp(BigFloat(m[k] * log(x) + (M - m)[k] * log(1 - x * μ[k]) + logpdf(beta_distr[k], x)))
                 # this is deprecated
-                prob(x) = IntegralProblem(f, (0, x))        
-                ff(x) = solve(prob(x), Integrals.GaussLegendre(), reltol = 1e-10, abstol = 1e-10)
+                prob(x) = IntegralProblem(f, (0, x))
+                # this is sooo slow, maybe one could approximate it?      
+                #ff(x) = solve(prob(x), Integrals.GaussLegendre(), reltol = 1e-10, abstol = 1e-10)
+                ff(x) = solve(prob(x), Integrals.HCubatureJL(), reltol = 1e-10, abstol = 1e-10)
                 R = ff(1)
                 #= 
                 function gr(x)
                     x = x[1]
-                    2 * (ff(x)[1] / R[1] - U[k]) * f(x, 1) / R[1]
+                    x = (1 + exp(-x[1])) ^ -1
+                    2 * (ff(x)[1] / R[1] - U[k]) * f(x, 1) * x * (1 - x) / R[1]
                 end # end function
                 function hs(x)
                     x   = x[1]
@@ -106,9 +109,10 @@ function sample_u_cond_random_eff(n, N, m, M, γ₁, γ₂; prec = 80, method)
                     p2 *= 2 * (ff(x)[1] / R[1] - U[k]) / R[1]
                     p1 + p2 / R[1]
                 end # end funciton =#
-                #a = optimize(x -> (ff(x)[1] / R[1] - U[k]) ^ 2, gr, hs, [.5], Optim.Newton(); inplace = false)
-                a = optimize(x -> (ff(x)[1] / R[1] - U[k]) ^ 2, 0, 1, Optim.Brent(), rel_tol = 1e-10)
-                push!(res, a.minimizer)
+                #a = optimize(x -> (ff((1 + exp(-x[1])) ^ -1)[1] / R[1] - U[k]) ^ 2, gr, [.5], Optim.BFGS(); inplace = false)
+                #Optim.NelderMead():
+                a = optimize(x -> abs(ff(x)[1] - R[1] * U[k]), 0, 1, Optim.Brent(), abs_tol = 1e-6)
+                push!(res, a.minimizer[1])
             end # end set precision
         end # end for
     elseif method == "grid"

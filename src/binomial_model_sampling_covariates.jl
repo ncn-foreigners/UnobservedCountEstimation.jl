@@ -91,7 +91,8 @@ function sample_M_matrix_variate_cond_random_eff(n, N, m, γ₀, γ₁, γ₂, u
         #println([minimum(U[cond] .- CDF[cond]), maximum(U[cond] .- CDF[cond])])
         x[cond] .+= 1
 
-        CDF[cond] += reshape([cond[i,j] ? mass_function(x[i, j], i, j) : 0 for j in axes(x, 2) for i in axes(x, 1)], size(x))[cond]
+        # .+= or +=?
+        CDF[cond] .+= reshape([cond[i,j] ? mass_function(x[i, j], i, j) : 0 for j in axes(x, 2) for i in axes(x, 1)], size(x))[cond]
         cond = CDF .< U
     end
     

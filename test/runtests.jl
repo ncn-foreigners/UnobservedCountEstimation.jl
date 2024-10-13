@@ -52,7 +52,7 @@ end # end test "zhang_model.jl"
     Random.seed!(1234)
     b = binomial_model(
         df[:, :m], df[:, :N], df[:, :n]; 
-        start =  "lm", grid = .3:.01:2.5, 
+        start =  "lm", grid = .3:.001:3.5, 
         k_prior = k, theta_prior = θ, 
         sigma_prior = Σ, iter = 1_000, 
         rand_eff = true, u_method = "grid"
@@ -69,15 +69,19 @@ end # end test "zhang_model.jl"
     @test quantile(b.sim_res[end ],    2.5 / 100) <= γ₂ <= quantile(b.sim_res[end],     97.5 / 100)
 
     Random.seed!(1234)
+    # This needs some work
+    # TODO:: figure out if this is just due to the data or do we genuenly have 40% estimation error on this
     c = binomial_model(
         df[:, :m], df[:, :N], df[:, :n]; 
-        start =  "lm", grid = .3:.01:2.5, 
+        start =  "lm", grid = .3:.001:3.5, 
         k_prior = k, theta_prior = θ, 
-        sigma_prior = Σ, iter = 300, 
+        sigma_prior = Σ, iter = 1_000, 
         rand_eff = true, u_method = "exact"
     )
 
     res_c = reduce(vcat, [c.coefs["Mean"][1:Q], [c.coefs["Mean"][end - 1]], [c.coefs["Mean"][end]]])
+    #res_c = reduce(vcat, [[mean(c.sim_res[k][501:end]) for k in 1:Q], mean(c.sim_res[end - 1][501:end]), mean(c.sim_res[end][501:end])])
+    #res_c = reduce(vcat, [c.coefs["Mean"][1:Q], [c.coefs["Mean"][end - 1]], [c.coefs["Mean"][end]]])
     @test res_c[1:Q] ≈ df[:, :M] rtol = .5
 
     @test res_c[Q + 1] ≈ γ₁ rtol = .15
