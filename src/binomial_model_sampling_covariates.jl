@@ -1,8 +1,8 @@
 
 
-
-# TODO:: This is waaaaay to slow
-# TODO:: This goes to infinity with sampling fix it!
+## IDK what changed but now this is not that slow
+## Previous comments:
+# This goes to infinity with sampling fix it!
 # probably a math mistake in norm_const calc
 function sample_M_matrix_variate_cond_random_eff(n, N, m, γ₀, γ₁, γ₂, u, M)
     # compute ξ, μ

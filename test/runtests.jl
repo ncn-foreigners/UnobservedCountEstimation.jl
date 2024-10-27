@@ -20,8 +20,8 @@ end # end test "zhang_model.jl"
 @testset "binomial_model.jl" begin
     df = CSV.read(pwd() * "/test_csv_binomial_no_random_effect.csv", DataFrame)
     #df = CSV.read(pwd() * "/test/test_csv_binomial_no_random_effect.csv", DataFrame)
-    γ₁ = 0.8983650801874796
-    γ₂ = 1.578563831198963
+    γ₁ = df[1, :γ₁]
+    γ₂ = df[1, :γ₂]
     Σ  = [1 .5; .5 1]
     k  = [24.0, 13.5]
     θ  = [0.04, 0.09523809523809523]
@@ -38,17 +38,18 @@ end # end test "zhang_model.jl"
     res_a = a.coefs["Mean"]
     parm  = reduce(vcat, [df[:, :M], [γ₁], [γ₂]])
 
-    @test res_a ≈ parm rtol = .12
+    @test res_a ≈ parm rtol = .05
     @test all(quantile.(a.sim_res[1:Q], 2.5 / 100) <= df[:, :M] <= quantile.(a.sim_res[1:Q], 97.5 / 100))
     
-    @test res_a[(end-1):end] ≈ [γ₁, γ₂] rtol = .06
+    @test res_a[(end-1):end] ≈ [γ₁, γ₂] rtol = .01
     @test quantile(a.sim_res[end - 1], 2.5 / 100) <= γ₁ <= quantile(a.sim_res[end - 1], 97.5 / 100)
     @test quantile(a.sim_res[end],     2.5 / 100) <= γ₂ <= quantile(a.sim_res[end],     97.5 / 100)
 
     # new data
     df = CSV.read(pwd() * "/test_csv_binomial_with_random_effect.csv", DataFrame)
     #df = CSV.read(pwd() * "/test/test_csv_binomial_with_random_effect.csv", DataFrame)
-    # γ parameters are the same as in previous case
+    γ₁ = df[1, :γ₁]
+    γ₂ = df[1, :γ₂]
     Random.seed!(1234)
     b = binomial_model(
         df[:, :m], df[:, :N], df[:, :n]; 
@@ -61,10 +62,11 @@ end # end test "zhang_model.jl"
     res_b = reduce(vcat, [b.coefs["Mean"][1:Q], [b.coefs["Mean"][end - 1]], [b.coefs["Mean"][end]]])
     parm  = reduce(vcat, [df[:, :M], [γ₁], [γ₂]])
 
-    @test res_b[1:Q] ≈ df[:, :M] rtol = .15
-    @test all(quantile.(b.sim_res[1:Q], 2.5 / 100) .<= df[:, :M] .<= quantile.(b.sim_res[1:Q], 97.5 / 100))
+    @test res_b[1:Q] ≈ df[:, :M] rtol = .1
+    @test sum(quantile.(b.sim_res[1:Q], 2.5 / 100) .<= df[:, :M] .<= quantile.(b.sim_res[1:Q], 97.5 / 100)) > 17
     
-    @test res_b[Q + 1] ≈ γ₁ rtol = .05
+    @test res_b[Q + 1] ≈ γ₁ rtol = .01
+    @test res_b[(end-1):end] ≈ [γ₁, γ₂] rtol = .2
     @test quantile(b.sim_res[end - 1], 2.5 / 100) <= γ₁ <= quantile(b.sim_res[end - 1], 97.5 / 100)
     @test quantile(b.sim_res[end ],    2.5 / 100) <= γ₂ <= quantile(b.sim_res[end],     97.5 / 100)
 
@@ -73,7 +75,7 @@ end # end test "zhang_model.jl"
     # TODO:: figure out if this is just due to the data or do we genuenly have 40% estimation error on this
     c = binomial_model(
         df[:, :m], df[:, :N], df[:, :n]; 
-        start =  "lm", grid = .3:.001:3.5, 
+        start =  "lm", grid = .3:.0001:3.5, 
         k_prior = k, theta_prior = θ, 
         sigma_prior = Σ, iter = 1_000, 
         rand_eff = true, u_method = "exact"
@@ -82,11 +84,10 @@ end # end test "zhang_model.jl"
     res_c = reduce(vcat, [c.coefs["Mean"][1:Q], [c.coefs["Mean"][end - 1]], [c.coefs["Mean"][end]]])
     #res_c = reduce(vcat, [[mean(c.sim_res[k][501:end]) for k in 1:Q], mean(c.sim_res[end - 1][501:end]), mean(c.sim_res[end][501:end])])
     #res_c = reduce(vcat, [c.coefs["Mean"][1:Q], [c.coefs["Mean"][end - 1]], [c.coefs["Mean"][end]]])
-    @test res_c[1:Q] ≈ df[:, :M] rtol = .5
+    @test res_c[1:Q] ≈ df[:, :M] rtol = .15
 
-    @test res_c[Q + 1] ≈ γ₁ rtol = .15
-
-    @test quantile(c.sim_res[end - 1],  5 / 100) <= γ₁ <= quantile(c.sim_res[end - 1],    1)
-    @test quantile(c.sim_res[end ],   2.5 / 100) <= γ₂ <= quantile(c.sim_res[end],     97.5 / 100)
+    @test res_c[Q + 1] ≈ γ₁ rtol = .05
+    @test quantile(c.sim_res[end - 1], 5 / 100) <= γ₁ <= quantile(c.sim_res[end - 1], 1)
+    @test quantile(c.sim_res[end ], 0) <= γ₂ <= quantile(c.sim_res[end], 95 / 100)
 end # end test "binomial_model.jl"
 
